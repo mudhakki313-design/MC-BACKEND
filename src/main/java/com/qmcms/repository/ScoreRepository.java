@@ -21,4 +21,6 @@ public interface ScoreRepository extends JpaRepository<Score, Long> {
 
     List<Score> findByParticipantCompetitionId(Long competitionId);
 
+
+
 }

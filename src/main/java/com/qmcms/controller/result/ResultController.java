@@ -18,13 +18,19 @@ public class ResultController {
     private final ResultService resultService;
 
     @GetMapping("/competition/{competitionId}/juzuu/{juzuu}")
-    @PreAuthorize("hasAnyRole('ASSOCIATION','CHIEF_JUDGE')")
+    @PreAuthorize("""
+            hasAnyAuthority(
+                'ROLE_ASSOCIATION',
+                'ROLE_CHIEF_JUDGE'
+            )
+            """)
     public List<ResultResponse> getCompetitionResults(
             @PathVariable Long competitionId,
             @PathVariable Juzuu juzuu) {
 
-        return resultService.getCompetitionResults(competitionId, juzuu);
-
+        return resultService.getCompetitionResults(
+                competitionId,
+                juzuu
+        );
     }
-
 }

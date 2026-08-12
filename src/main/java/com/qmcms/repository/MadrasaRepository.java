@@ -13,4 +13,6 @@ public interface MadrasaRepository extends JpaRepository<Madrasa, Long> {
 
     boolean existsByEmail(String email);
     boolean existsByEmailAndIdNot(String email, Long id);
+
+    Optional<Madrasa> findByUserUsername(String username);
 }

@@ -9,6 +9,8 @@ import com.qmcms.repository.ScoreRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -26,28 +28,40 @@ public class ScoreServiceImpl implements ScoreService {
     @Transactional
     public ScoreResponse createScore(ScoreRequest request) {
 
-        Participant participant = findParticipant(request.getParticipantId());
+        Participant participant = findParticipant(
+                request.getParticipantId()
+        );
 
-        Judge judge = findJudge(request.getJudgeId());
+        // Pata Judge aliye-login kupitia JWT
+        Judge judge = getCurrentJudge();
 
+        // Participant lazima awe amepita screening
         if (participant.getStatus() != ParticipantStatus.APPROVED) {
 
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Participant has not passed screening."
             );
-
         }
 
-        scoreRepository.findByParticipantAndJudge(participant, judge)
-                .ifPresent(score -> {
-                    throw new ResponseStatusException(
-                            HttpStatus.BAD_REQUEST,
-                            "Score already submitted."
-                    );
-                });
+        // Judge huyu tayari ameweka score?
+        scoreRepository.findByParticipantAndJudge(
+                participant,
+                judge
+        ).ifPresent(score -> {
 
-        validateScore(judge, request.getScore());
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Score already submitted."
+            );
+
+        });
+
+        // Hakikisha score inaendana na aina ya Judge
+        validateScore(
+                judge.getJudgeType(),
+                request.getScore()
+        );
 
         Score score = Score.builder()
                 .participant(participant)
@@ -58,7 +72,6 @@ public class ScoreServiceImpl implements ScoreService {
         scoreRepository.save(score);
 
         return mapToResponse(score);
-
     }
 
     @Override
@@ -68,7 +81,6 @@ public class ScoreServiceImpl implements ScoreService {
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
-
     }
 
     @Override
@@ -76,16 +88,46 @@ public class ScoreServiceImpl implements ScoreService {
 
         Participant participant = findParticipant(participantId);
 
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        String role = authentication.getAuthorities()
+                .stream()
+                .findFirst()
+                .map(authority -> authority.getAuthority())
+                .orElse("");
+
+        /*
+         * Judge wa kawaida anaona score yake tu.
+         */
+        if ("ROLE_JUDGE".equals(role)) {
+
+            Judge currentJudge = getCurrentJudge();
+
+            return scoreRepository
+                    .findByParticipantAndJudge(
+                            participant,
+                            currentJudge
+                    )
+                    .map(score -> List.of(mapToResponse(score)))
+                    .orElse(List.of());
+        }
+
+        /*
+         * Chief Judge na Association
+         * wanaona scores zote.
+         */
         return scoreRepository.findByParticipant(participant)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
-
     }
 
-    // ==========================
+    // =========================================================
     // Helper Methods
-    // ==========================
+    // =========================================================
 
     private Participant findParticipant(Long id) {
 
@@ -94,22 +136,47 @@ public class ScoreServiceImpl implements ScoreService {
                         HttpStatus.NOT_FOUND,
                         "Participant not found."
                 ));
-
     }
 
-    private Judge findJudge(Long id) {
+    private Judge getCurrentJudge() {
 
-        return judgeRepository.findById(id)
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        if (authentication == null ||
+                authentication.getName() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated."
+            );
+        }
+
+        String username = authentication.getName();
+
+        return judgeRepository
+                .findByUserUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "Judge not found."
+                        "Judge profile not found."
                 ));
-
     }
 
-    private void validateScore(Judge judge, Double score) {
+    private void validateScore(
+            JudgeType judgeType,
+            Double score) {
 
-        switch (judge.getJudgeType()) {
+        if (score == null || score < 0) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Score cannot be negative."
+            );
+        }
+
+        switch (judgeType) {
 
             case MEMORIZATION -> {
 
@@ -119,9 +186,7 @@ public class ScoreServiceImpl implements ScoreService {
                             HttpStatus.BAD_REQUEST,
                             "Maximum Memorization score is 50."
                     );
-
                 }
-
             }
 
             case TAJWEED -> {
@@ -132,9 +197,7 @@ public class ScoreServiceImpl implements ScoreService {
                             HttpStatus.BAD_REQUEST,
                             "Maximum Tajweed score is 30."
                     );
-
                 }
-
             }
 
             case MAKHARIJ -> {
@@ -145,31 +208,35 @@ public class ScoreServiceImpl implements ScoreService {
                             HttpStatus.BAD_REQUEST,
                             "Maximum Makharij score is 20."
                     );
-
                 }
-
             }
 
             case CHIEF -> throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Chief Judge cannot submit scores."
+                    "Chief Judge cannot submit component scores."
             );
-
         }
-
     }
 
     private ScoreResponse mapToResponse(Score score) {
 
         return ScoreResponse.builder()
                 .id(score.getId())
-                .participant(score.getParticipant().getFullName())
-                .madrasa(score.getParticipant().getMadrasa().getName())
-                .judge(score.getJudge().getFullName())
-                .judgeType(score.getJudge().getJudgeType())
+                .participant(
+                        score.getParticipant().getFullName()
+                )
+                .madrasa(
+                        score.getParticipant()
+                                .getMadrasa()
+                                .getName()
+                )
+                .judge(
+                        score.getJudge().getFullName()
+                )
+                .judgeType(
+                        score.getJudge().getJudgeType()
+                )
                 .score(score.getScore())
                 .build();
-
     }
-
 }
