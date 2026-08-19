@@ -1,8 +1,10 @@
 package com.qmcms.controller.result;
 
+import com.qmcms.dto.request.ResultUpdateRequest;
 import com.qmcms.dto.response.ResultResponse;
 import com.qmcms.entity.Juzuu;
 import com.qmcms.service.ResultService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +19,39 @@ public class ResultController {
 
     private final ResultService resultService;
 
-    @GetMapping("/competition/{competitionId}/juzuu/{juzuu}")
+
+    // =========================================================
+    // CHIEF JUDGE - GENERATE RESULTS
+    // =========================================================
+
+    @PostMapping(
+            "/competition/{competitionId}/juzuu/{juzuu}/generate"
+    )
+    @PreAuthorize("hasAuthority('ROLE_CHIEF_JUDGE')")
+    public List<ResultResponse> generateResults(
+
+            @PathVariable Long competitionId,
+
+            @PathVariable Juzuu juzuu
+
+    ) {
+
+        return resultService.generateResults(
+                competitionId,
+                juzuu
+        );
+
+    }
+
+
+    // =========================================================
+    // ASSOCIATION + CHIEF JUDGE
+    // GET SAVED RESULTS
+    // =========================================================
+
+    @GetMapping(
+            "/competition/{competitionId}/juzuu/{juzuu}"
+    )
     @PreAuthorize("""
             hasAnyAuthority(
                 'ROLE_ASSOCIATION',
@@ -25,12 +59,40 @@ public class ResultController {
             )
             """)
     public List<ResultResponse> getCompetitionResults(
+
             @PathVariable Long competitionId,
-            @PathVariable Juzuu juzuu) {
+
+            @PathVariable Juzuu juzuu
+
+    ) {
 
         return resultService.getCompetitionResults(
                 competitionId,
                 juzuu
         );
+
     }
+
+
+    // =========================================================
+    // CHIEF JUDGE - EDIT RESULT
+    // =========================================================
+
+    @PutMapping("/{resultId}")
+    @PreAuthorize("hasAuthority('ROLE_CHIEF_JUDGE')")
+    public ResultResponse updateResult(
+
+            @PathVariable Long resultId,
+
+            @Valid @RequestBody ResultUpdateRequest request
+
+    ) {
+
+        return resultService.updateResult(
+                resultId,
+                request
+        );
+
+    }
+
 }

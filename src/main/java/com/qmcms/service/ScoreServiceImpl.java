@@ -24,18 +24,22 @@ public class ScoreServiceImpl implements ScoreService {
     private final ParticipantRepository participantRepository;
     private final JudgeRepository judgeRepository;
 
+
+    // =========================================================
+    // JUDGE - CREATE SCORE
+    // =========================================================
+
     @Override
     @Transactional
     public ScoreResponse createScore(ScoreRequest request) {
 
-        Participant participant = findParticipant(
-                request.getParticipantId()
-        );
+        Participant participant =
+                findParticipant(request.getParticipantId());
 
-        // Pata Judge aliye-login kupitia JWT
         Judge judge = getCurrentJudge();
 
-        // Participant lazima awe amepita screening
+
+        // Participant lazima awe approved
         if (participant.getStatus() != ParticipantStatus.APPROVED) {
 
             throw new ResponseStatusException(
@@ -43,6 +47,7 @@ public class ScoreServiceImpl implements ScoreService {
                     "Participant has not passed screening."
             );
         }
+
 
         // Judge huyu tayari ameweka score?
         scoreRepository.findByParticipantAndJudge(
@@ -57,11 +62,13 @@ public class ScoreServiceImpl implements ScoreService {
 
         });
 
-        // Hakikisha score inaendana na aina ya Judge
+
+        // Validate score according to judge type
         validateScore(
                 judge.getJudgeType(),
                 request.getScore()
         );
+
 
         Score score = Score.builder()
                 .participant(participant)
@@ -69,10 +76,17 @@ public class ScoreServiceImpl implements ScoreService {
                 .score(request.getScore())
                 .build();
 
+
         scoreRepository.save(score);
+
 
         return mapToResponse(score);
     }
+
+
+    // =========================================================
+    // GET ALL SCORES
+    // =========================================================
 
     @Override
     public List<ScoreResponse> getAllScores() {
@@ -83,60 +97,87 @@ public class ScoreServiceImpl implements ScoreService {
                 .toList();
     }
 
-    @Override
-    public List<ScoreResponse> getParticipantScores(Long participantId) {
 
-        Participant participant = findParticipant(participantId);
+    // =========================================================
+    // GET PARTICIPANT SCORES
+    // =========================================================
+
+    @Override
+    public List<ScoreResponse> getParticipantScores(
+            Long participantId) {
+
+        Participant participant =
+                findParticipant(participantId);
+
 
         Authentication authentication =
                 SecurityContextHolder
                         .getContext()
                         .getAuthentication();
 
-        String role = authentication.getAuthorities()
-                .stream()
-                .findFirst()
-                .map(authority -> authority.getAuthority())
-                .orElse("");
+
+        String role =
+                authentication.getAuthorities()
+                        .stream()
+                        .findFirst()
+                        .map(authority -> authority.getAuthority())
+                        .orElse("");
+
 
         /*
-         * Judge wa kawaida anaona score yake tu.
+         * Judge wa kawaida anaona
+         * score yake tu.
          */
         if ("ROLE_JUDGE".equals(role)) {
 
-            Judge currentJudge = getCurrentJudge();
+            Judge currentJudge =
+                    getCurrentJudge();
+
 
             return scoreRepository
                     .findByParticipantAndJudge(
                             participant,
                             currentJudge
                     )
-                    .map(score -> List.of(mapToResponse(score)))
+                    .map(score ->
+                            List.of(mapToResponse(score))
+                    )
                     .orElse(List.of());
         }
+
 
         /*
          * Chief Judge na Association
          * wanaona scores zote.
          */
-        return scoreRepository.findByParticipant(participant)
+        return scoreRepository
+                .findByParticipant(participant)
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
+
     // =========================================================
-    // Helper Methods
+    // FIND PARTICIPANT
     // =========================================================
 
     private Participant findParticipant(Long id) {
 
-        return participantRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Participant not found."
-                ));
+        return participantRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Participant not found."
+                        )
+                );
     }
+
+
+    // =========================================================
+    // GET CURRENT JUDGE
+    // =========================================================
 
     private Judge getCurrentJudge() {
 
@@ -144,6 +185,7 @@ public class ScoreServiceImpl implements ScoreService {
                 SecurityContextHolder
                         .getContext()
                         .getAuthentication();
+
 
         if (authentication == null ||
                 authentication.getName() == null) {
@@ -154,15 +196,25 @@ public class ScoreServiceImpl implements ScoreService {
             );
         }
 
-        String username = authentication.getName();
+
+        String username =
+                authentication.getName();
+
 
         return judgeRepository
                 .findByUserUsername(username)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Judge profile not found."
-                ));
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Judge profile not found."
+                        )
+                );
     }
+
+
+    // =========================================================
+    // VALIDATE SCORE
+    // =========================================================
 
     private void validateScore(
             JudgeType judgeType,
@@ -175,6 +227,7 @@ public class ScoreServiceImpl implements ScoreService {
                     "Score cannot be negative."
             );
         }
+
 
         switch (judgeType) {
 
@@ -189,6 +242,7 @@ public class ScoreServiceImpl implements ScoreService {
                 }
             }
 
+
             case TAJWEED -> {
 
                 if (score > 30) {
@@ -199,6 +253,7 @@ public class ScoreServiceImpl implements ScoreService {
                     );
                 }
             }
+
 
             case MAKHARIJ -> {
 
@@ -211,6 +266,7 @@ public class ScoreServiceImpl implements ScoreService {
                 }
             }
 
+
             case CHIEF -> throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Chief Judge cannot submit component scores."
@@ -218,25 +274,61 @@ public class ScoreServiceImpl implements ScoreService {
         }
     }
 
+
+    // =========================================================
+    // SCORE RESPONSE
+    // =========================================================
+
     private ScoreResponse mapToResponse(Score score) {
 
+        Participant participant =
+                score.getParticipant();
+
+
         return ScoreResponse.builder()
+
                 .id(score.getId())
+
+                .participantId(
+                        participant.getId()
+                )
+
                 .participant(
-                        score.getParticipant().getFullName()
+                        participant.getFullName()
                 )
+
                 .madrasa(
-                        score.getParticipant()
-                                .getMadrasa()
-                                .getName()
+                        participant.getMadrasa().getName()
                 )
+
+                .competition(
+                        participant
+                                .getCompetition()
+                                .getTitle()
+                )
+
+                .juzuu(
+                        participant.getJuzuu()
+                )
+
+                .competitionId(
+                        participant
+                                .getCompetition()
+                                .getId()
+                )
+
                 .judge(
                         score.getJudge().getFullName()
                 )
+
                 .judgeType(
                         score.getJudge().getJudgeType()
                 )
-                .score(score.getScore())
+
+                .score(
+                        score.getScore()
+                )
+
                 .build();
     }
 }

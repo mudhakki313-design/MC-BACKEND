@@ -34,6 +34,7 @@ public class Score {
     @Column(nullable = false)
     private Double score;
 
+
     @Builder.Default
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

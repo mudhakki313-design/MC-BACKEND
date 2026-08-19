@@ -8,6 +8,8 @@ import lombok.Data;
 @Builder
 public class ResultResponse {
 
+    private Long resultId;
+
     private Integer rank;
 
     private Long participantId;
@@ -18,8 +20,9 @@ public class ResultResponse {
 
     private String competition;
 
+    private Long competitionId;
+
     private Juzuu juzuu;
 
     private Double totalScore;
-
 }
