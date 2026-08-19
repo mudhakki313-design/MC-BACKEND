@@ -69,11 +69,12 @@ public class JudgeController {
     }
 
     // =========================================================
-    // GET CURRENT LOGGED-IN JUDGE
-    // =========================================================
+// GET CURRENT LOGGED-IN JUDGE
+// =========================================================
 
     @GetMapping("/me")
-    public Judge getCurrentJudge(Authentication authentication) {
+    public JudgeResponse getCurrentJudge(
+            Authentication authentication) {
 
         if (authentication == null ||
                 authentication.getName() == null) {
@@ -84,7 +85,7 @@ public class JudgeController {
             );
         }
 
-        return judgeRepository
+        Judge judge = judgeRepository
                 .findByUserUsername(authentication.getName())
                 .orElseThrow(() ->
                         new ResponseStatusException(
@@ -92,6 +93,40 @@ public class JudgeController {
                                 "Judge profile not found."
                         )
                 );
+
+        return JudgeResponse.builder()
+
+                .id(judge.getId())
+
+                .judgeNumber(
+                        judge.getJudgeNumber()
+                )
+
+                .fullName(
+                        judge.getFullName()
+                )
+
+                .phone(
+                        judge.getPhone()
+                )
+
+                .email(
+                        judge.getEmail()
+                )
+
+                .judgeType(
+                        judge.getJudgeType()
+                )
+
+                .status(
+                        judge.getStatus()
+                )
+
+                .username(
+                        judge.getUser().getUsername()
+                )
+
+                .build();
     }
 
 }
