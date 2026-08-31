@@ -28,7 +28,7 @@ public class MadrasaController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ASSOCIATION')")
+    @PreAuthorize("hasAnyRole('ASSOCIATION', 'CHIEF_JUDGE')")
     public List<MadrasaResponse> getAllMadrasas() {
 
         return madrasaService.getAllMadrasas();

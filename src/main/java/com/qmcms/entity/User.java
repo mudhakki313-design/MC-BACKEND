@@ -49,4 +49,8 @@ public class User {
     @OneToOne(mappedBy = "user")
     private Judge judge;
 
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String profileImage;
+
 }

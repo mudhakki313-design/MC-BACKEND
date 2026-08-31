@@ -33,7 +33,7 @@ public class JudgeController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ASSOCIATION')")
+    @PreAuthorize("hasAnyRole('ASSOCIATION', 'CHIEF_JUDGE')")
     public List<JudgeResponse> getAllJudges() {
 
         return judgeService.getAllJudges();

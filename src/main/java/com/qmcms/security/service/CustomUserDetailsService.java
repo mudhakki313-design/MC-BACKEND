@@ -22,7 +22,10 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() ->
-                        new UsernameNotFoundException("Invalid username"));
+                        new UsernameNotFoundException(
+                                "Invalid username"
+                        )
+                );
 
         return new org.springframework.security.core.userdetails.User(
 
@@ -38,10 +41,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
                 true,
 
-                List.of(new SimpleGrantedAuthority(user.getRole().name()))
-
+                List.of(
+                        new SimpleGrantedAuthority(
+                                user.getRole().name()
+                        )
+                )
         );
-
     }
-
 }
