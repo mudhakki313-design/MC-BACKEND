@@ -17,4 +17,24 @@ public interface ParticipantService {
 
     void deleteParticipant(Long id);
 
+    List<ParticipantResponse> getParticipantsForMadrasa(
+            String username
+    );
+
+    ParticipantResponse createParticipantForMadrasa(
+            String username,
+            ParticipantRequest request
+    );
+
+    ParticipantResponse updateParticipantForMadrasa(
+            String username,
+            Long id,
+            ParticipantRequest request
+    );
+
+    void deleteParticipantForMadrasa(
+            String username,
+            Long id
+    );
+
 }

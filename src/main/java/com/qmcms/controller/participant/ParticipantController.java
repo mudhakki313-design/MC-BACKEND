@@ -7,6 +7,7 @@ import com.qmcms.service.ParticipantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -104,5 +105,90 @@ public class ParticipantController {
                 )
                 .toList();
 
+    }
+
+    // =====================================================
+// MADRASA
+// VIEW OWN PARTICIPANTS
+// =====================================================
+
+    @GetMapping("/madrasa")
+    @PreAuthorize("hasRole('MADRASA')")
+    public List<ParticipantResponse> getMyMadrasaParticipants(
+            Authentication authentication
+    ) {
+
+        String username = authentication.getName();
+
+        return participantService
+                .getParticipantsForMadrasa(username);
+    }
+
+
+// =====================================================
+// MADRASA
+// CREATE PARTICIPANT
+// =====================================================
+
+    @PostMapping("/madrasa")
+    @PreAuthorize("hasRole('MADRASA')")
+    public ParticipantResponse createMadrasaParticipant(
+            Authentication authentication,
+            @Valid @RequestBody ParticipantRequest request
+    ) {
+
+        String username = authentication.getName();
+
+        return participantService
+                .createParticipantForMadrasa(
+                        username,
+                        request
+                );
+    }
+
+
+// =====================================================
+// MADRASA
+// UPDATE OWN PARTICIPANT
+// =====================================================
+
+    @PutMapping("/madrasa/{id}")
+    @PreAuthorize("hasRole('MADRASA')")
+    public ParticipantResponse updateMadrasaParticipant(
+            Authentication authentication,
+            @PathVariable Long id,
+            @Valid @RequestBody ParticipantRequest request
+    ) {
+
+        String username = authentication.getName();
+
+        return participantService
+                .updateParticipantForMadrasa(
+                        username,
+                        id,
+                        request
+                );
+    }
+
+
+// =====================================================
+// MADRASA
+// DELETE OWN PARTICIPANT
+// =====================================================
+
+    @DeleteMapping("/madrasa/{id}")
+    @PreAuthorize("hasRole('MADRASA')")
+    public void deleteMadrasaParticipant(
+            Authentication authentication,
+            @PathVariable Long id
+    ) {
+
+        String username = authentication.getName();
+
+        participantService
+                .deleteParticipantForMadrasa(
+                        username,
+                        id
+                );
     }
 }

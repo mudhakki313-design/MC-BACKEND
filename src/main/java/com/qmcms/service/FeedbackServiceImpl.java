@@ -95,11 +95,13 @@ public class FeedbackServiceImpl implements FeedbackService {
         String username = authentication.getName();
 
         return madrasaRepository
-                .findByUserUsername(username)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Madrasa profile not found."
-                ));
+                .findByUser_Username(username)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Madrasa account not found."
+                        )
+                );
     }
 
     private FeedbackResponse mapToResponse(Feedback feedback) {
