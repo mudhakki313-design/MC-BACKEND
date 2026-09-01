@@ -40,12 +40,11 @@ public class ResultController {
                 competitionId,
                 juzuu
         );
-
     }
 
 
     // =========================================================
-    // ASSOCIATION + CHIEF JUDGE
+    // MADRASA + ASSOCIATION + CHIEF JUDGE
     // GET SAVED RESULTS
     // =========================================================
 
@@ -54,6 +53,7 @@ public class ResultController {
     )
     @PreAuthorize("""
             hasAnyAuthority(
+                'ROLE_MADRASA',
                 'ROLE_ASSOCIATION',
                 'ROLE_CHIEF_JUDGE'
             )
@@ -70,12 +70,11 @@ public class ResultController {
                 competitionId,
                 juzuu
         );
-
     }
 
 
     // =========================================================
-    // CHIEF JUDGE - EDIT RESULT
+    // CHIEF JUDGE - UPDATE RESULT
     // =========================================================
 
     @PutMapping("/{resultId}")
@@ -92,7 +91,5 @@ public class ResultController {
                 resultId,
                 request
         );
-
     }
-
 }

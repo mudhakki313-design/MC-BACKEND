@@ -7,14 +7,55 @@ import java.util.List;
 
 public interface MadrasaService {
 
-    MadrasaResponse createMadrasa(MadrasaRequest request);
+
+    // =====================================================
+    // CREATE
+    // =====================================================
+
+    MadrasaResponse createMadrasa(
+            MadrasaRequest request
+    );
+
+
+    // =====================================================
+    // GET ALL
+    // =====================================================
 
     List<MadrasaResponse> getAllMadrasas();
 
-    MadrasaResponse getMadrasaById(Long id);
 
-    MadrasaResponse updateMadrasa(Long id, MadrasaRequest request);
+    // =====================================================
+    // GET ONE
+    // =====================================================
 
-    void deactivateMadrasa(Long id);
+    MadrasaResponse getMadrasaById(
+            Long id
+    );
+
+
+    // =====================================================
+    // GET MY MADRASA
+    // =====================================================
+
+    MadrasaResponse getMyMadrasa();
+
+
+    // =====================================================
+    // UPDATE
+    // =====================================================
+
+    MadrasaResponse updateMadrasa(
+            Long id,
+            MadrasaRequest request
+    );
+
+
+    // =====================================================
+    // DEACTIVATE
+    // =====================================================
+
+    void deactivateMadrasa(
+            Long id
+    );
 
 }
